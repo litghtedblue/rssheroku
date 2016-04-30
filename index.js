@@ -32,7 +32,7 @@ for(key in rows){
  console.log(key);
 }           
 
-res.render('pages/users', { title: 'Express Users', users: rows.rows });
+res.render('pages/users', { title: 'heroku Express Users', users: rows.rows });
         });
     });
 });
