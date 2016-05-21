@@ -1,0 +1,9 @@
+.site {
+    font-size: 70%;
+}
+.slide {
+    margin: 5px;
+}
+.titlelist tbody tr td {
+    border: 1px solid #d0d0d0;
+}
