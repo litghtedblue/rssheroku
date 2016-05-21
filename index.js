@@ -1,6 +1,11 @@
 var express = require('express');
 var app = express();
 
+var bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
@@ -36,6 +41,30 @@ res.render('pages/users', { title: 'heroku2 Express Users', users: rows.rows });
         });
     });
 });
+
+/*
+app.post('/json',function(req,res){
+    var v=JSON.stringify(req.body, null, 2);
+    console.log(v);    
+    res.render("pages/result",{result:"js"});
+});
+*/
+app.use(function (req, res) {
+  res.setHeader('Content-Type', 'text/plain')
+  res.write('you posted:\n')
+  var json=JSON.stringify(req.body, null, 2);
+  var p=JSON.parse(json);
+  var entries=p["entries"];
+  entries.map(function(entry, index, array1){
+      console.log(entry["title"]+" "+entry["url"]+" "+entry["site"]+" "+entry["updateTime"]);
+  });
+  
+  
+  
+  res.end();
+})
+
+
 
 app.listen(app.get('port'), function() {
     console.log('Node app is running on port', app.get('port'));
