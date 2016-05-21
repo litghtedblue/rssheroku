@@ -4,11 +4,13 @@ var app = express();
 var bodyParser = require('body-parser');
 
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '100mb'}));
+
 
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
+
 
 // views is directory for all template files
 app.set('views', __dirname + '/views');
@@ -48,9 +50,13 @@ app.post('/json',function(req,res){
   res.write('you posted:\n')
   var json=JSON.stringify(req.body, null, 2);
   var p=JSON.parse(json);
+  var start=p["start"];
+  console.log(start);
   var entries=p["entries"];
   entries.map(function(entry, index, array1){
-      console.log(entry["title"]+" "+entry["url"]+" "+entry["site"]+" "+entry["updateTime"]);
+      if(index<3){
+        console.log(entry["title"]+" "+entry["url"]+" "+entry["site"]+" "+entry["updateTime"]);
+      }
   });
   res.end();
 });
