@@ -42,14 +42,8 @@ res.render('pages/users', { title: 'heroku2 Express Users', users: rows.rows });
     });
 });
 
-/*
+
 app.post('/json',function(req,res){
-    var v=JSON.stringify(req.body, null, 2);
-    console.log(v);    
-    res.render("pages/result",{result:"js"});
-});
-*/
-app.use(function (req, res) {
   res.setHeader('Content-Type', 'text/plain')
   res.write('you posted:\n')
   var json=JSON.stringify(req.body, null, 2);
@@ -58,11 +52,9 @@ app.use(function (req, res) {
   entries.map(function(entry, index, array1){
       console.log(entry["title"]+" "+entry["url"]+" "+entry["site"]+" "+entry["updateTime"]);
   });
-  
-  
-  
   res.end();
-})
+});
+
 
 
 
