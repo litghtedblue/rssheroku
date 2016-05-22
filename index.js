@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var pg = require('pg');
 var bodyParser = require('body-parser');
+var Sequelize = require('sequelize');
+var validator = require('validator');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({ limit: '100mb' }));
@@ -22,25 +24,7 @@ app.set('view engine', 'jade');
 //});
 
 app.get('/', function (req, res) {
-    var conString = process.env.DATABASE_URL;
-    var resultName = "";
-    var client = new pg.Client(conString);
-    client.connect(function (err) {
-        if (err) {
-            return console.error('could not connect to postgres', err);
-        }
-        console.log("connect ok");
-        client.query('select * from users', function (err, rows) {
-            if (err) {
-                console.log('select error');
-            }
-            for (key in rows) {
-                console.log(key);
-            }
-
-            res.render('pages/users', { title: 'heroku2 Express Users', users: rows.rows });
-        });
-    });
+    res.render('pages/users', {});
 });
 app.get('/rss', function (req, res) {
     var url = require('url');
@@ -50,15 +34,16 @@ app.get('/rss', function (req, res) {
     var end = url_parts.query["end"];
     var conString = process.env.DATABASE_URL;
     pg.connect(conString, function (err, client, done) {
-        client.query('select * from RSS_ENTRY ORDER BY updateTime DESC,ID DESC LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
+        client.query('select * from RSS_ENTRIES ORDER BY ID DESC LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
             if (err) {
                 return console.error('could not select', err);
             }
             res.setHeader('Content-Type', 'application/json')
             var r = result.rows;
             r.map(function (entry, index, array1) {
-                var updateTime = entry["updatetime"];
-                delete entry["updatetime"];
+                entry["title"] = validator.unescape(entry["title"]);
+                var updateTime = entry["updatedAt"];
+                delete entry["updatedAt"];
                 entry["updateTime"] = updateTime.getTime();
             });
             res.write(JSON.stringify(r));
@@ -68,62 +53,51 @@ app.get('/rss', function (req, res) {
 });
 
 app.post('/json', function (req, res) {
-    var json = JSON.stringify(req.body, null, 2);
-    var p = JSON.parse(json);
+    //var json = JSON.stringify(req.body, null, 2);
+    var p = req.body;//JSON.parse(json);
     var start = p["start"];
     console.log(start);
     var entries = p["entries"];
     var conString = process.env.DATABASE_URL;
-    var resultName = "";
-    pg.connect(conString, function (err, client, done) {
-        if (err) {
-            return console.error('could not connect to postgres', err);
-        }
-        var p = Promise.resolve().then(function () {
-            return new Promise(function (resolve, reject) {
-                if (start != 0) {
-                    resolve();
-                    return;
-                }
-                client.query("DELETE FROM RSS_ENTRY", function (err, result) {
-                    if (err) {
-                        reject();
-                        return console.error('can not delete', err);
-                    }
-                    resolve();
-                });
-            })
-        });
-        entries.map(function (entry, index, array1) {
-            var d = new Date(entry["updateTime"]);
-            var time = comDateFormat(d, "yyyy/MM/dd HH:mm");
-            p.then(function () {
-                return new Promise(function (resolve, reject) {
-                    client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp($4, 'YYYY/MM/DD HH24:MI'))"
-                        , [entry["title"], entry["url"], entry["site"], time], function (err, result) {
-                            if (err) {
-                                reject();
-                                return console.error('can not insert', err);
-                            }
-                            resolve();
-                        });
-                })
-            })
-        });
-        p.then(function () {
-            return new Promise(function (resolve, reject) {
-                entries.map(function (entry, index, array1) {
-                    if (index < 3) {
-                        console.log(entry["title"] + " " + entry["url"] + " " + entry["site"] + " " + entry["updateTime"]);
-                    }
-                });
-                res.setHeader('Content-Type', 'text/plain')
-                res.write('you posted:\n')
-                res.end();
-                resolve();
-            })
-        }).catch(function () { console.log("err") });
+    var sequelize = new Sequelize(conString, {
+        dialect: 'postgres'
+        //,
+        // native:true,
 
+        , dialectOptions: {
+            ssl: true
+        }
+    });
+
+
+    entries.map(function (entry, index, array1) {
+        var d = new Date(entry["updateTime"]);
+        entry["updateTime"] = d;
+    });
+
+    var Rssentry = sequelize.define("rss_entry", {
+        title: Sequelize.STRING,
+        url: Sequelize.STRING,
+        site: Sequelize.STRING,
+        updatetime: Sequelize.TIME
+    });
+
+
+    Promise.resolve().then(
+        function () {
+            if(start!=0){
+                return;
+            }
+            return Rssentry.destroy({ where: { id: { gt: 1 } } });
+        }
+    ).then(function () {
+        return Rssentry.bulkCreate(
+            entries
+        );
+    }).then(function () {
+        res.setHeader('Content-Type', 'text/plain')
+        res.write('you posted:\n')
+        res.end();
     });
 });
 
@@ -135,11 +109,11 @@ app.listen(app.get('port'), function () {
 });
 
 /**************************************************
-	 * [機能]	日付オブジェクトから文字列に変換します
-	 * [引数]	date	対象の日付オブジェクト
-	 * 			format	フォーマット
-	 * [戻値]	フォーマット後の文字列
-	 **************************************************/
+     * [機能]	日付オブジェクトから文字列に変換します
+     * [引数]	date	対象の日付オブジェクト
+     * 			format	フォーマット
+     * [戻値]	フォーマット後の文字列
+     **************************************************/
 function comDateFormat(date, format) {
 
     var result = format;
