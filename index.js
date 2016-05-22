@@ -50,12 +50,18 @@ app.get('/rss', function (req, res) {
     var end = url_parts.query["end"];
     var conString = process.env.DATABASE_URL;
     pg.connect(conString, function (err, client, done) {
-        client.query('select * from RSS_ENTRY ORDER BY updateTime,ID LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
+        client.query('select * from RSS_ENTRY ORDER BY updateTime DESC,ID DESC LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
             if (err) {
                 return console.error('could not select', err);
             }
             res.setHeader('Content-Type', 'application/json')
-            res.write(JSON.stringify(result.rows));
+            var r = result.rows;
+            r.map(function (entry, index, array1) {
+                var updateTime = entry["updatetime"];
+                console.log(typeof updateTime);
+                entry["updateTime"]=entry["updatetime"].getTime();
+            });
+            res.write(JSON.stringify(r));
             res.end();
         });
     });
