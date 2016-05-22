@@ -58,8 +58,8 @@ app.get('/rss', function (req, res) {
             var r = result.rows;
             r.map(function (entry, index, array1) {
                 var updateTime = entry["updatetime"];
-                console.log(typeof updateTime);
-                entry["updateTime"]=entry["updatetime"].getTime();
+                delete entry["updatetime"];
+                entry["updateTime"] = updateTime.getTime();
             });
             res.write(JSON.stringify(r));
             res.end();
@@ -68,8 +68,6 @@ app.get('/rss', function (req, res) {
 });
 
 app.post('/json', function (req, res) {
-    res.setHeader('Content-Type', 'text/plain')
-    res.write('you posted:\n')
     var json = JSON.stringify(req.body, null, 2);
     var p = JSON.parse(json);
     var start = p["start"];
@@ -78,33 +76,53 @@ app.post('/json', function (req, res) {
     var conString = process.env.DATABASE_URL;
     var resultName = "";
     pg.connect(conString, function (err, client, done) {
-
-        //var client = new pg.Client(conString);
         if (err) {
             return console.error('could not connect to postgres', err);
         }
-        client.query("DELETE FROM RSS_ENTRY", function (err, result) {
-            if (err) {
-                return console.error('can not delete', err);
-            }
+        var p = Promise.resolve().then(function () {
+            return new Promise(function (resolve, reject) {
+                if (start != 0) {
+                    resolve();
+                    return;
+                }
+                client.query("DELETE FROM RSS_ENTRY", function (err, result) {
+                    if (err) {
+                        reject();
+                        return console.error('can not delete', err);
+                    }
+                    resolve();
+                });
+            })
         });
-
         entries.map(function (entry, index, array1) {
             var d = new Date(entry["updateTime"]);
             var time = comDateFormat(d, "yyyy/MM/dd HH:mm");
-            client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp($4, 'YYYY/MM/DD HH24:MI'))"
-                , [entry["title"], entry["url"], entry["site"], time], function (err, result) {
-                    if (err) {
-                        return console.error('can not insert', err);
+            p.then(function () {
+                return new Promise(function (resolve, reject) {
+                    client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp($4, 'YYYY/MM/DD HH24:MI'))"
+                        , [entry["title"], entry["url"], entry["site"], time], function (err, result) {
+                            if (err) {
+                                reject();
+                                return console.error('can not insert', err);
+                            }
+                            resolve();
+                        });
+                })
+            })
+        });
+        p.then(function () {
+            return new Promise(function (resolve, reject) {
+                entries.map(function (entry, index, array1) {
+                    if (index < 3) {
+                        console.log(entry["title"] + " " + entry["url"] + " " + entry["site"] + " " + entry["updateTime"]);
                     }
                 });
-        });
-        entries.map(function (entry, index, array1) {
-            if (index < 3) {
-                console.log(entry["title"] + " " + entry["url"] + " " + entry["site"] + " " + entry["updateTime"]);
-            }
-        });
-        res.end();
+                res.setHeader('Content-Type', 'text/plain')
+                res.write('you posted:\n')
+                res.end();
+                resolve();
+            })
+        }).catch(function () { console.log("err") });
 
     });
 });
