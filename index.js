@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-
+var pg = require('pg');
 var bodyParser = require('body-parser');
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -22,7 +22,6 @@ app.set('view engine', 'jade');
 //});
 
 app.get('/', function (req, res) {
-    var pg = require('pg');
     var conString = process.env.DATABASE_URL;
     var resultName = "";
     var client = new pg.Client(conString);
@@ -43,7 +42,24 @@ app.get('/', function (req, res) {
         });
     });
 });
-
+app.get('/rss', function (req, res) {
+    var url = require('url');
+    var url_parts = url.parse(req.url, true);
+    //start=0&end=100
+    var start = url_parts.query["start"];
+    var end = url_parts.query["end"];
+    var conString = process.env.DATABASE_URL;
+    pg.connect(conString, function (err, client, done) {
+        client.query('select * from RSS_ENTRY ORDER BY updateTime,ID LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
+            if (err) {
+                return console.error('could not select', err);
+            }
+            res.setHeader('Content-Type', 'application/json')
+            res.write(JSON.stringify(result.rows));
+            res.end();
+        });
+    });
+});
 
 app.post('/json', function (req, res) {
     res.setHeader('Content-Type', 'text/plain')
@@ -53,35 +69,38 @@ app.post('/json', function (req, res) {
     var start = p["start"];
     console.log(start);
     var entries = p["entries"];
-    var pg = require('pg');
     var conString = process.env.DATABASE_URL;
     var resultName = "";
-    var client = new pg.Client(conString);
-    client.connect(function (err) {
+    pg.connect(conString, function (err, client, done) {
+
+        //var client = new pg.Client(conString);
         if (err) {
             return console.error('could not connect to postgres', err);
         }
+        client.query("DELETE FROM RSS_ENTRY", function (err, result) {
+            if (err) {
+                return console.error('can not delete', err);
+            }
+        });
+
         entries.map(function (entry, index, array1) {
-            var d=new Date(entry["updateTime"]);
-            console.log(d);
-            var time=comDateFormat(d, "yyyy/MM/dd HH:mm");
-            console.log(time);
-            client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp('$4', 'YYYY/MM/DD HH24:MI'))"
-                , entry["title"], entry["url"], entry["site"], time, function (err, result) {
+            var d = new Date(entry["updateTime"]);
+            var time = comDateFormat(d, "yyyy/MM/dd HH:mm");
+            client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp($4, 'YYYY/MM/DD HH24:MI'))"
+                , [entry["title"], entry["url"], entry["site"], time], function (err, result) {
                     if (err) {
                         return console.error('can not insert', err);
                     }
                 });
         });
+        entries.map(function (entry, index, array1) {
+            if (index < 3) {
+                console.log(entry["title"] + " " + entry["url"] + " " + entry["site"] + " " + entry["updateTime"]);
+            }
+        });
+        res.end();
 
     });
-
-    entries.map(function (entry, index, array1) {
-        if (index < 3) {
-            console.log(entry["title"] + " " + entry["url"] + " " + entry["site"] + " " + entry["updateTime"]);
-        }
-    });
-    res.end();
 });
 
 
@@ -97,66 +116,66 @@ app.listen(app.get('port'), function () {
 	 * 			format	フォーマット
 	 * [戻値]	フォーマット後の文字列
 	 **************************************************/
-	function comDateFormat(date, format){
+function comDateFormat(date, format) {
 
-		var result = format;
+    var result = format;
 
-		var f;
-		var rep;
+    var f;
+    var rep;
 
-		var yobi = new Array('日', '月', '火', '水', '木', '金', '土');
+    var yobi = new Array('日', '月', '火', '水', '木', '金', '土');
 
-		f = 'yyyy';
-		if ( result.indexOf(f) > -1 ) {
-			rep = date.getFullYear();
-			result = result.replace(/yyyy/, rep);
-		}
+    f = 'yyyy';
+    if (result.indexOf(f) > -1) {
+        rep = date.getFullYear();
+        result = result.replace(/yyyy/, rep);
+    }
 
-		f = 'MM';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getMonth() + 1, 2);
-			result = result.replace(/MM/, rep);
-		}
+    f = 'MM';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getMonth() + 1, 2);
+        result = result.replace(/MM/, rep);
+    }
 
-		f = 'ddd';
-		if ( result.indexOf(f) > -1 ) {
-			rep = yobi[date.getDay()];
-			result = result.replace(/ddd/, rep);
-		}
+    f = 'ddd';
+    if (result.indexOf(f) > -1) {
+        rep = yobi[date.getDay()];
+        result = result.replace(/ddd/, rep);
+    }
 
-		f = 'dd';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getDate(), 2);
-			result = result.replace(/dd/, rep);
-		}
+    f = 'dd';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getDate(), 2);
+        result = result.replace(/dd/, rep);
+    }
 
-		f = 'HH';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getHours(), 2);
-			result = result.replace(/HH/, rep);
-		}
+    f = 'HH';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getHours(), 2);
+        result = result.replace(/HH/, rep);
+    }
 
-		f = 'mm';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getMinutes(), 2);
-			result = result.replace(/mm/, rep);
-		}
+    f = 'mm';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getMinutes(), 2);
+        result = result.replace(/mm/, rep);
+    }
 
-		f = 'ss';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getSeconds(), 2);
-			result = result.replace(/ss/, rep);
-		}
+    f = 'ss';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getSeconds(), 2);
+        result = result.replace(/ss/, rep);
+    }
 
-		f = 'fff';
-		if ( result.indexOf(f) > -1 ) {
-			rep = comPadZero(date.getMilliseconds(), 3);
-			result = result.replace(/fff/, rep);
-		}
+    f = 'fff';
+    if (result.indexOf(f) > -1) {
+        rep = comPadZero(date.getMilliseconds(), 3);
+        result = result.replace(/fff/, rep);
+    }
 
-		return result;
+    return result;
 
-	}
+}
 
 
 /**************************************************
