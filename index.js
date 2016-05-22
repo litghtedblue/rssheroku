@@ -68,16 +68,12 @@ app.post('/json', function (req, res) {
         }
     });
 
-
-
-
     var Rssentry = sequelize.define("rss_entry", {
         title: Sequelize.STRING,
         url: Sequelize.STRING,
         site: Sequelize.STRING,
-        updatetime: Sequelize.TIME
+        updatetime: Sequelize.DATE
     });
-
 
     Promise.resolve().then(function () {
         entries.map(function (entry, index, array1) {
