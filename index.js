@@ -62,8 +62,12 @@ app.post('/json', function (req, res) {
             return console.error('could not connect to postgres', err);
         }
         entries.map(function (entry, index, array1) {
+            var d=new Date(entry["updateTime"]);
+            console.log(d);
+            var time=comDateFormat(d, "yyyy/MM/dd HH:mm");
+            console.log(time);
             client.query("INSERT INTO RSS_ENTRY (title,url,site,updateTime) VALUES ($1,$2,$3,to_timestamp('$4', 'YYYY/MM/DD HH24:MI'))"
-                , entry["title"], entry["url"], entry["site"], comDateParse(entry["updateTime"], "yyyy/MM/dd HH:mm"), function (err, result) {
+                , entry["title"], entry["url"], entry["site"], time, function (err, result) {
                     if (err) {
                         return console.error('can not insert', err);
                     }
@@ -86,6 +90,74 @@ app.post('/json', function (req, res) {
 app.listen(app.get('port'), function () {
     console.log('Node app is running on port', app.get('port'));
 });
+
+/**************************************************
+	 * [機能]	日付オブジェクトから文字列に変換します
+	 * [引数]	date	対象の日付オブジェクト
+	 * 			format	フォーマット
+	 * [戻値]	フォーマット後の文字列
+	 **************************************************/
+	function comDateFormat(date, format){
+
+		var result = format;
+
+		var f;
+		var rep;
+
+		var yobi = new Array('日', '月', '火', '水', '木', '金', '土');
+
+		f = 'yyyy';
+		if ( result.indexOf(f) > -1 ) {
+			rep = date.getFullYear();
+			result = result.replace(/yyyy/, rep);
+		}
+
+		f = 'MM';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getMonth() + 1, 2);
+			result = result.replace(/MM/, rep);
+		}
+
+		f = 'ddd';
+		if ( result.indexOf(f) > -1 ) {
+			rep = yobi[date.getDay()];
+			result = result.replace(/ddd/, rep);
+		}
+
+		f = 'dd';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getDate(), 2);
+			result = result.replace(/dd/, rep);
+		}
+
+		f = 'HH';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getHours(), 2);
+			result = result.replace(/HH/, rep);
+		}
+
+		f = 'mm';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getMinutes(), 2);
+			result = result.replace(/mm/, rep);
+		}
+
+		f = 'ss';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getSeconds(), 2);
+			result = result.replace(/ss/, rep);
+		}
+
+		f = 'fff';
+		if ( result.indexOf(f) > -1 ) {
+			rep = comPadZero(date.getMilliseconds(), 3);
+			result = result.replace(/fff/, rep);
+		}
+
+		return result;
+
+	}
+
 
 /**************************************************
  * [機能]	文字列から日付オブジェクトに変換します
