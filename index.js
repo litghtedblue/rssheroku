@@ -42,8 +42,7 @@ app.get('/rss', function (req, res) {
             var r = result.rows;
             r.map(function (entry, index, array1) {
                 entry["title"] = validator.unescape(entry["title"]);
-                var updateTime = entry["updatedAt"];
-                delete entry["updatedAt"];
+                var updateTime = entry["updatetime"];
                 entry["updateTime"] = updateTime.getTime();
             });
             res.write(JSON.stringify(r));
@@ -70,10 +69,7 @@ app.post('/json', function (req, res) {
     });
 
 
-    entries.map(function (entry, index, array1) {
-        var d = new Date(entry["updateTime"]);
-        entry["updateTime"] = d;
-    });
+
 
     var Rssentry = sequelize.define("rss_entry", {
         title: Sequelize.STRING,
@@ -83,22 +79,29 @@ app.post('/json', function (req, res) {
     });
 
 
-    Promise.resolve().then(
+    Promise.resolve().then(function () {
+        entries.map(function (entry, index, array1) {
+            var d = new Date(entry["updateTime"]);
+            delete entry["updateTime"];
+            entry["updatetime"] = d;
+        });
+    }).then(
         function () {
-            if(start!=0){
+            if (start != 0) {
                 return;
             }
             return Rssentry.destroy({ where: { id: { gt: 1 } } });
         }
-    ).then(function () {
-        return Rssentry.bulkCreate(
-            entries
-        );
-    }).then(function () {
-        res.setHeader('Content-Type', 'text/plain')
-        res.write('you posted:\n')
-        res.end();
-    });
+        ).then(function () {
+            var tmp = entries[0];
+            return Rssentry.bulkCreate(
+                entries
+            );
+        }).then(function () {
+            res.setHeader('Content-Type', 'text/plain')
+            res.write('you posted:\n')
+            res.end();
+        });
 });
 
 
