@@ -16,6 +16,7 @@
             ],
             "env": {
                 "NODE_ENV": "development",
+                //"NODE_ENV": "production",
                 "DATABASE_URL":"postgres://qfrtslezdiebjl:gMYk2tBeGafPS7oyNNrkWtP8cH@ec2-23-21-42-29.compute-1.amazonaws.com:5432/dfaq8ebq0rf4a7?ssl=true"
             },
             "externalConsole": false,

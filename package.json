@@ -20,10 +20,7 @@
     "react-redux": "^4.2.1",
     "redux": "^3.2.1",
     "redux-logger": "^2.4.0",
-    "redux-thunk": "^1.0.3",
-    "webpack": "^1.9.11",
-    "webpack-dev-middleware": "^1.2.0",
-    "webpack-hot-middleware": "^2.9.1"
+    "redux-thunk": "^1.0.3"
   },
   "engines": {
     "node": "0.12.7"
