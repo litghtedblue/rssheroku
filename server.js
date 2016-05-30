@@ -38,6 +38,7 @@ app.get('/rss', function (req, res) {
     var conString = process.env.DATABASE_URL;
     pg.connect(conString, function (err, client, done) {
         client.query('select * from RSS_ENTRIES ORDER BY ID DESC LIMIT $1 OFFSET $2', [end - start, start], function (err, result) {
+            done();
             if (err) {
                 return console.error('could not select', err);
             }
