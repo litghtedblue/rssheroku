@@ -138,9 +138,9 @@ $(function () {
                     $("#eiji").empty();
                     a = row1.word;
                     b = row2.word;
-                    a1 = a.replace(/^([a-zA-Z &,_-]+).*/, function () { return RegExp.$1 });
+                    a1 = a.replace(/^([a-zA-Z0-9 &',_-]+).*/, function () { return RegExp.$1 });
                     a1 = a1.replace(/\s*$/, "");
-                    b1 = b.replace(/^([a-zA-Z &,_-]+).*/, function () { return RegExp.$1 });
+                    b1 = b.replace(/^([a-zA-Z0-9 &',_-]+).*/, function () { return RegExp.$1 });
                     b1 = b1.replace(/\s*$/, "");
                     //短いほうを優先
                     if (a1.length > b1.length) {
