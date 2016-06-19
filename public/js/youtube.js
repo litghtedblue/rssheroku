@@ -114,6 +114,7 @@ $(function () {
     $("#word").keydown(function (e) {
         e.stopPropagation();
     });
+
     $("#word").keyup(function (e) {
         //Esc
         if (e.keyCode == 27) {
@@ -130,21 +131,29 @@ $(function () {
         if (pre == text) {
             return;
         }
-        $("#eiji").empty();
         var url = "/eiji?word=" + text;
         $.getJSON(url, function (raw) {
             var json = raw.sort(
                 function (row1, row2) {
+                    $("#eiji").empty();
                     a = row1.word;
                     b = row2.word;
-                    a1 = a.replace(/^([a-zA-Z _-]+).*/, function () { return RegExp.$1 });
-                    b1 = b.replace(/^([a-zA-Z _-]+).*/, function () { return RegExp.$1 });
+                    a1 = a.replace(/^([a-zA-Z &,_-]+).*/, function () { return RegExp.$1 });
+                    a1 = a1.replace(/\s*$/, "");
+                    b1 = b.replace(/^([a-zA-Z &,_-]+).*/, function () { return RegExp.$1 });
+                    b1 = b1.replace(/\s*$/, "");
                     //短いほうを優先
                     if (a1.length > b1.length) {
                         return 1;
                     }
                     if (a1.length < b1.length) {
                         return -1;
+                    }
+                    if (a1.match(/^[a-z]/) && b1.match(/^[A-Z]/)) {
+                        return -1;
+                    }
+                    if (a1.match(/^[A-Z]/) && b1.match(/^[a-z]/)) {
+                        return 1;
                     }
                     if (a.length > b.length) {
                         return 1;

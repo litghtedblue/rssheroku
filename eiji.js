@@ -38,7 +38,7 @@ app.get('/eiji', function (req, res) {
     var db = new sqlite3.Database('db.sqlite3');
     res.setHeader('Content-Type', 'application/json')
     db.serialize(function () {
-        var sql = "SELECT word,content FROM eiji where word like '" + word + "%' order by word limit 50";
+        var sql = "SELECT word,content FROM eiji where word like '" + word + "%' order by word limit 100";
         //console.log(sql);
         db.all(sql, function (err, rows) {
             if (!err) {
