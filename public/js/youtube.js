@@ -118,9 +118,6 @@ $(function () {
     $("#word").keyup(function (e) {
         //Esc
         if (e.keyCode == 27) {
-            $("#word").val("");
-            pre = "";
-            $("#eiji").empty();
             $("#word").blur()
             return;
         }
@@ -129,60 +126,71 @@ $(function () {
             return;
         }
         if (pre == text) {
+            console.log("skip");
             return;
         }
-        var url = "/eiji?word=" + text;
-        $.getJSON(url, function (raw) {
-            var json = raw.sort(
-                function (row1, row2) {
-                    $("#eiji").empty();
-                    a = row1.word;
-                    b = row2.word;
-                    a1 = a.replace(/^([a-zA-Z0-9 &',_-]+).*/, function () { return RegExp.$1 });
-                    a1 = a1.replace(/\s*$/, "");
-                    b1 = b.replace(/^([a-zA-Z0-9 &',_-]+).*/, function () { return RegExp.$1 });
-                    b1 = b1.replace(/\s*$/, "");
-                    //短いほうを優先
-                    if (a1.length > b1.length) {
-                        return 1;
-                    }
-                    if (a1.length < b1.length) {
-                        return -1;
-                    }
-                    if (a1.match(/^[a-z]/) && b1.match(/^[A-Z]/)) {
-                        return -1;
-                    }
-                    if (a1.match(/^[A-Z]/) && b1.match(/^[a-z]/)) {
-                        return 1;
-                    }
-                    if (a.length > b.length) {
-                        return 1;
-                    }
-                    if (a.length < b.length) {
-                        return -1;
-                    }
-                    return 0;
-                }
-            );
-
-            for (var i = 0; i < json.length; i++) {
-                $('#eiji').append(json[i].word + "&nbsp;" + json[i].content + "<br/>");
+        setTimeout(function () {
+            var text2 = $("#word").val();
+            if (!text2) {
+                return;
             }
+            if (pre == text) {
+                console.log("skip");
+                return;
+            }
+            if (text2!=text) {
+                console.log("skip");
+                return;
+            }
+            var url = "/eiji?word=" + text2;
             pre = text;
-        });
+            $.getJSON(url, function (raw) {
+                $("#eiji").empty();
+                var json = raw.sort(
+                    function (row1, row2) {
+                        a = row1.word;
+                        b = row2.word;
+                        a1 = a.replace(/^([a-zA-Z0-9 &',_~-]+).*/, function () { return RegExp.$1 });
+                        a1 = a1.replace(/\s*$/, "");
+                        b1 = b.replace(/^([a-zA-Z0-9 &',_~-]+).*/, function () { return RegExp.$1 });
+                        b1 = b1.replace(/\s*$/, "");
+                        //短いほうを優先
+                        if (a1.length > b1.length) {
+                            return 1;
+                        }
+                        if (a1.length < b1.length) {
+                            return -1;
+                        }
+                        if (a1.match(/^[a-z]/) && b1.match(/^[A-Z]/)) {
+                            return -1;
+                        }
+                        if (a1.match(/^[A-Z]/) && b1.match(/^[a-z]/)) {
+                            return 1;
+                        }
+                        if (a.length > b.length) {
+                            return 1;
+                        }
+                        if (a.length < b.length) {
+                            return -1;
+                        }
+                        return 0;
+                    }
+                );
+
+                for (var i = 0; i < json.length; i++) {
+                    $('#eiji').append(json[i].word + "&nbsp;" + json[i].content + "<br/>");
+                }
+            });
+        }, 200);
         e.stopPropagation();
     });
     $(window).keyup(function (e) {
-        //Esc
-        if (e.keyCode == 27) {
-            $("#word").val("");
-            pre = "";
-            $("#eiji").empty();
-            return;
-        }
         //s
         if (e.keyCode == 83) {
             if (player.getPlayerState() == 2) {
+                $("#word").val("");
+                pre = "";
+                $("#eiji").empty();
                 $("#word").focus();
             }
         }
@@ -203,7 +211,7 @@ $(function () {
         }
         //n
         if (e.keyCode == 78) {
-            player.nextVideo();
+            //player.nextVideo();
         }
 
         //b

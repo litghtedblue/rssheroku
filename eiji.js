@@ -4,7 +4,8 @@ var pg = require('pg');
 var bodyParser = require('body-parser');
 var Sequelize = require('sequelize');
 var validator = require('validator');
-
+var sqlite3 = require('sqlite3').verbose();
+var db = new sqlite3.Database('db.sqlite3');
 
 var app = express();
 app.set('port', (process.env.PORT || 3000));
@@ -34,11 +35,10 @@ app.get('/eiji', function (req, res) {
     var url_parts = url.parse(req.url, true);
     //start=0&end=100
     var word = url_parts.query["word"];
-    var sqlite3 = require('sqlite3').verbose();
-    var db = new sqlite3.Database('db.sqlite3');
+
     res.setHeader('Content-Type', 'application/json')
-    db.serialize(function () {
-        var sql = "SELECT word,content FROM eiji where word like '" + word + "%' order by word limit 100";
+    db.parallelize(function () {
+        var sql = "SELECT word,content FROM eiji where word like '" + word + "%' order by length(word),word limit 100";
         //console.log(sql);
         db.all(sql, function (err, rows) {
             if (!err) {
