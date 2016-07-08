@@ -15,7 +15,11 @@ function onYouTubePlayerAPIReady() {
     });
 }
 function onPlayerReady(event) {
-    var videos = ['W9eypX6T1I8',
+    var videos = [
+        'HtYROrW9G8A',
+        'pnnDz1DBUKo',
+        'R22wyhc4S2w',
+        'W9eypX6T1I8',
         'p5SDTlCeVYg',
         '139PPu-CEPU',
         'pQjNvZ1_gmg',
@@ -178,7 +182,11 @@ $(function () {
                 );
 
                 for (var i = 0; i < json.length; i++) {
-                    $('#eiji').append(json[i].word + "&nbsp;" + json[i].content + "<br/>");
+                    var head=json[i].word.replace(/^([a-zA-Z0-9 &',_~-]+).*/, function () { return RegExp.$1 });
+                    var dom="<div><a target=\"_blank\" href=\"http://ejje.weblio.jp/content/"+head+"\">"+json[i].word+"</a>";
+                    dom=dom+"&nbsp;" + json[i].content + "</div>";                   
+                    console.log(dom);
+                    $('#eiji').append(dom);
                 }
             });
         }, 200);
